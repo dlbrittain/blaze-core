@@ -330,12 +330,26 @@ cdef class chunk:
     return (cbytes, blocksize)
 
   def getdata(self):
-    """Get a compressed String object out of this chunk (for persistence)."""
+    """Get a compressed string object out of this chunk (for persistence)."""
     cdef object string
 
     assert (not self.isconstant,
             "This function can only be used for persistency")
     string = PyString_FromStringAndSize(self.data, <Py_ssize_t>self.cdbytes)
+    return string
+
+  def getudata(self):
+    """Get an uncompressed string out of this chunk (for 'O'bject types)."""
+    cdef int ret
+    cdef char *dest
+
+    dest = <char *>malloc(self.nbytes)
+    # Fill dest with uncompressed data
+    with nogil:
+      ret = blosc_decompress(self.data, dest, self.nbytes)
+    if ret < 0:
+      raise RuntimeError, "fatal error during Blosc decompression: %d" % ret
+    string = PyString_FromStringAndSize(dest, <Py_ssize_t>self.nbytes)
     return string
 
   cdef void _getitem(self, int start, int stop, char *dest):
@@ -920,7 +934,6 @@ cdef class carray:
 
     self.atomsize = atomsize = dtype.itemsize
     self.itemsize = itemsize = dtype.base.itemsize
-    print "atomsize, itemsize:", atomsize, itemsize
 
     # Check defaults for dflt
     _dflt = np.zeros((), dtype=dtype)
@@ -1133,7 +1146,6 @@ cdef class carray:
     import pickle
 
     for obj in arrobj:
-      print "obj-->", obj
       pick_obj = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
       chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
                      _memory = self._rootdir is None)
@@ -1595,6 +1607,13 @@ cdef class carray:
     self.idxcache = idxcache
     return 1
 
+  def getitem_object(self, object key):
+    """Retrieve elements of type object."""
+    import pickle
+    cchunk = self.chunks[key]
+    chunk = cchunk.getudata()
+    return pickle.loads(chunk)
+
   def __getitem__(self, object key):
     """
     x.__getitem__(key) <==> x[key]
@@ -1635,6 +1654,8 @@ cdef class carray:
       if key >= self.len:
         raise IndexError, "index out of range"
       arr1 = self.arr1
+      if self.dtype.char == 'O':
+        return self.getitem_object(key)
       if self.getitem_cache(key, arr1.data):
         if self.itemsize == self.atomsize:
           return PyArray_GETITEM(arr1, arr1.data)
