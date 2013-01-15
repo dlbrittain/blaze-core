@@ -1,61 +1,62 @@
-interface Array T ds:
-    op _+_ :: (a,a) -> a
-
-# Array indexing
-interface Ix T:
-    fun getitem  :: (T, index) -> T
-    fun getslice :: (T, index) -> T
-
-    fun setitem  :: (T, index, val) -> ()
-    fun setslice :: (T, index, val) -> ()
-
-    fun delitem  :: (T, index) -> ()
-    fun delslice :: (T, index) -> ()
-
+# Establishes the mapping between primitive operations and the
+# their graph expression. 
 
 # Scalar arithmetic
 interface Arith a b:
-    op _+_ :: (a,a) -> a
-    op _-_ :: (a,a) -> a
-    op _*_ :: (a,a) -> a
+    fun add      :: (t,t) -> t
+    fun multiply :: (t,t) -> t
+    fun subtract :: (t,t) -> t
+    fun divide   :: (t,t) -> t
+    fun mod      :: (t,t) -> t
+    fun power    :: (t,t) -> t
 
-    op _+_ :: (b,b) -> b
-    op _-_ :: (b,b) -> b
-    op _*_ :: (b,b) -> b
+    # op _+_ = add
+    # op _*_ = multiply
+    # op _-_ = subtract
+    # op _/_ = divide
+    # op _%_ = mod
+    # op _**_ = power
 
-    op _**_ :: (a,a) -> a
-    op _**_ :: (a,b) -> b
-    op _**_ :: (b,a) -> b
-    op _**_ :: (b,b) -> b
+# Array objects
+interface Array A:
+    fun map        :: ((a -> b), A a) -> A b
+    fun reduce     :: (((a,a) -> b), A a) -> A b
+    fun accumulate :: (((a,a) -> b), A a) -> A b
+    fun zipwith    :: (((a,b) -> c), A a, A b) -> A c
 
-    fun abs :: a -> a
-    fun abs :: b -> b
+# Array indexing
+interface Ix t:
+    fun getitem  :: (t, index) -> t
+    fun getslice :: (t, index) -> t
 
-    fun exp :: b -> b
-    fun log :: b -> b
-    fun sqrt :: b -> b
+    fun setitem  :: (t, index, val) -> ()
+    fun setslice :: (t, index, val) -> ()
 
-    fun sin :: b -> b
-    fun cos :: b -> b
-    fun tan :: b -> b
+    fun delitem  :: (t, index) -> ()
+    fun delslice :: (t, index) -> ()
 
-    fun asin :: b -> b
-    fun acos :: b -> b
-    fun atan :: b -> b
+interface Ord t:
+    fun cmp_eq  :: (t, t) -> bool
+    fun cmp_neq :: (t, t) -> bool
+    fun cmp_gt  :: (t, t) -> bool
+    fun cmp_gte :: (t, t) -> bool
+    fun cmp_lt  :: (t, t) -> bool
+    fun cmp_lte :: (t, t) -> bool
 
-    fun asinh :: b -> b
-    fun acosh :: b -> b
-    fun atanh :: b -> b
-
-interface Ord T:
-    op _>_ :: (T,T) -> T
-    op _<_ :: (T,T) -> T
+    # op _=_  = cmp_eq
+    # op _!=_ = cmp_neq
+    # op _>_  = cmp_gt
+    # op _>=_ = cmp_gte
+    # op _<_  = cmp_lt
+    # op _<=_ = cmp_lte
 
 interface Bool t:
-    fun or  :: (T, T) -> T
-    fun and :: (T, T) -> T
-    fun xor :: (T, T) -> T
+    fun bit_not :: (t,t) -> t 
+    fun bit_and :: (t,t) -> t 
+    fun bit_or  :: (t,t) -> t 
+    fun bit_xor :: (t,t) -> t 
 
-interface Traversable t:
-    fun map :: ((a->b), T) -> T
-    fun zip :: ((a->b), T) -> T
+    # op _!_  = bit_not
+    # op _&_  = bit_and
+    # op _|_  = bit_or
+    # op _^_  = bit_xor
