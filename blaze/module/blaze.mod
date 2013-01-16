@@ -2,7 +2,7 @@
 # their graph expression. 
 
 # Scalar arithmetic
-interface Arith a b:
+interface Arith t:
     fun add      :: (t,t) -> t
     fun multiply :: (t,t) -> t
     fun subtract :: (t,t) -> t
