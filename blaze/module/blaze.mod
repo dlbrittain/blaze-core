@@ -1,5 +1,5 @@
 # Establishes the mapping between primitive operations and the
-# their graph expression. 
+# their graph expression.
 
 # Scalar arithmetic
 interface Arith t:
@@ -29,11 +29,11 @@ interface Ix t:
     fun getitem  :: (t, index) -> t
     fun getslice :: (t, index) -> t
 
-    fun setitem  :: (t, index, val) -> ()
-    fun setslice :: (t, index, val) -> ()
+    fun setitem  :: (t, index, val) -> !assign ()
+    fun setslice :: (t, index, val) -> !assign ()
 
-    fun delitem  :: (t, index) -> ()
-    fun delslice :: (t, index) -> ()
+    fun delitem  :: (t, index) -> !dealloc ()
+    fun delslice :: (t, index) -> !dealloc ()
 
 interface Ord t:
     fun cmp_eq  :: (t, t) -> bool
@@ -51,10 +51,10 @@ interface Ord t:
     # op _<=_ = cmp_lte
 
 interface Bool t:
-    fun bit_not :: (t,t) -> t 
-    fun bit_and :: (t,t) -> t 
-    fun bit_or  :: (t,t) -> t 
-    fun bit_xor :: (t,t) -> t 
+    fun bit_not :: (t,t) -> t
+    fun bit_and :: (t,t) -> t
+    fun bit_or  :: (t,t) -> t
+    fun bit_xor :: (t,t) -> t
 
     # op _!_  = bit_not
     # op _&_  = bit_and
