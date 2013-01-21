@@ -19,10 +19,12 @@ interface Arith t:
 
 # Array objects
 interface Array A:
-    fun map        :: ((a -> b), A a) -> A b
-    fun reduce     :: (((a,a) -> b), A a) -> A b
-    fun accumulate :: (((a,a) -> b), A a) -> A b
-    fun zipwith    :: (((a,b) -> c), A a, A b) -> A c
+    fun unit    :: a -> A a
+    fun map     :: ((a -> b), A a) -> A b
+    fun zip     :: (((a,b) -> c), b, A b) -> A c
+    fun reduce  :: (((a,a) -> b), A a) -> A b
+    fun scan    :: (((a,a) -> b), A a) -> A b
+    fun permute :: (((a,b) -> c), A a, A b) -> A c
 
 # Array indexing
 interface Ix t:
