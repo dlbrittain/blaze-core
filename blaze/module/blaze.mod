@@ -25,6 +25,7 @@ interface Array A:
     fun reduce  :: (((a,a) -> b), A a) -> A b
     fun scan    :: (((a,a) -> b), A a) -> A b
     fun permute :: (((a,b) -> c), A a, A b) -> A c
+    fun reshape :: (A a, b) -> A b
 
 # Array indexing
 interface Ix t:
@@ -34,9 +35,7 @@ interface Ix t:
     fun setitem  :: (t, index, val) -> !assign ()
     fun setslice :: (t, index, val) -> !assign ()
 
-    fun delitem  :: (t, index) -> !dealloc ()
-    fun delslice :: (t, index) -> !dealloc ()
-
+# Order
 interface Ord t:
     fun cmp_eq  :: (t, t) -> bool
     fun cmp_neq :: (t, t) -> bool
@@ -52,6 +51,7 @@ interface Ord t:
     # op _<_  = cmp_lt
     # op _<=_ = cmp_lte
 
+# Order
 interface Bool t:
     fun bit_not :: (t,t) -> t
     fun bit_and :: (t,t) -> t
