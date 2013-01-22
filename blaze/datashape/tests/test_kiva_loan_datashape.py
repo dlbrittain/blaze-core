@@ -16,6 +16,7 @@ def test_one_field_int():
     }"""
     parse(s)
     ds = dshape(s)
+    print(ds)
     assert str(ds) == '{ id : int64 }'
 
 def test_one_field_int_trailing_semi():
@@ -24,6 +25,7 @@ def test_one_field_int_trailing_semi():
     }"""
     parse(s)
     ds = dshape(s)
+    print(ds)
     assert str(ds) == '{ id : int64 }'
 
 def test_one_field_string():
@@ -32,6 +34,7 @@ def test_one_field_string():
     }"""
     parse(s)
     ds = dshape(s)
+    print(ds)
     assert str(ds) == '{ name : string }'
 
 def test_two_fields():
