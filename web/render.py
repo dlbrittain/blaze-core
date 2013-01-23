@@ -15,7 +15,7 @@ from os.path import abspath, join
 
 doc_url  = 'docs/index.html'
 
-src_url  = 'http://github.com/ContinuumIO/blaze'
+src_url  = 'http://github.com/ContinuumIO/blaze-core'
 mail_url = 'http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev'
 
 pages = [
@@ -69,6 +69,7 @@ def render_page(bfolder, name, template=None):
         'active_page' : name,
         'nav'         : nav.render(navigation_bar=pages, active_page=name),
         'content'     : text,
+        'github'      : src_url,
     }
 
     with codecs.open(output, 'w+', 'utf-8') as f:
