@@ -35,7 +35,7 @@ def test_conversion():
     print instructions
     print sorted(symbols)
 
-@skip
+#@skip
 def test_execution_simple():
     """
     >>> test_execution_simple()
@@ -100,6 +100,7 @@ def test_execution():
 
 if __name__ == '__main__':
 #    print blaze.zeros(datashape("4, float32")).datashape
+    test_execution_simple()
 #    print test_abs()
 #    test_conversion()
 #    test_execution()

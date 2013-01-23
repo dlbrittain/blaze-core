@@ -12,7 +12,7 @@ from numba.minivect import minitypes
 
 import blaze
 import blaze.idx
-from blaze import visitor
+from blaze import visitor, error
 from blaze.expr import ops
 import blaze.aterm as paterm
 from blaze.datashape import coretypes
@@ -55,14 +55,21 @@ class GraphToAst(visitor.BasicGraphVisitor):
 
 
 def is_something(name, app):
-    if isinstance(app, paterm.AAppl):
-        app = app.spine
-    return paterm.matches('%s;*' % name, app)
+    return app.spine.term == name
 
-is_arithmetic   = partial(is_something, 'Arithmetic')
-is_math         = partial(is_something, 'Math')
-is_reduction    = partial(is_something, 'Reduction')
-is_full_reduction = is_reduction
+def choice(choices, term):
+    """
+    >>> choice(['Add', 'Mul'], Add(...))
+    """
+    for choice in choices:
+        if is_something(choice, term):
+            return True
+
+    return False
+
+is_arithmetic   = partial(choice, ['Add', 'Mul'])
+is_math         = partial(choice, ['Abs'])
+#is_full_reduction = is_reduction
 is_slice        = partial(is_something, 'Slice')
 is_assign       = partial(is_something, 'Assign')
 is_array        = partial(is_something, 'Array')
@@ -96,7 +103,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
     def strategy(self, graph, operands):
         return "chunked"
 
-    def build_executor(self, graph, operands, result):
+    def build_executor(self, graph, operands, translated_ast):
         result_dtype = unannotate_dtype(graph)
         strategy = self.strategy(graph, operands)
 
@@ -107,9 +114,9 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
             executor = executors.NumbaFullReducingExecutor(
                     strategy, kernel, minitype(result_dtype), operation=opname)
-            fillvalue = graph.annotation.meta[1]
+            fillvalue = graph.annotation[1]
         else:
-            pyast_function = self.ufunc_builder.build_ufunc_ast(result)
+            pyast_function = self.ufunc_builder.build_ufunc_ast(translated_ast)
             # print getsource(pyast_function)
             py_ufunc = self.ufunc_builder.compile_to_pyfunc(pyast_function,
                                                             globals={'np': np})
@@ -122,7 +129,10 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
         return executor, fillvalue
 
-    def register_operand(self, graph, result, lhs):
+    def register_executable_graph(self, graph, result, lhs):
+        """
+        Register a sub-graph as executable.
+        """
         operands = self.ufunc_builder.operands
 
         executor, fillvalue = self.build_executor(graph, operands, result)
@@ -130,18 +140,16 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
         if lhs is not None:
             operands.append(lhs)
-            datashape = lhs.annotation.ty #self.get_blaze_op(lhs).datashape
+            datashape = lhs.annotation[0]
         else:
-            # blaze_operands = [self.get_blaze_op(op) for op in operands]
-            # datashape = coretypes.broadcast(*blaze_operands)
-            datashape = graph.annotation.ty
+            datashape = graph.annotation[0]
 
-        annotation = paterm.AAnnotation(
-            ty=datashape,
-            annotations=[id(executor), 'numba', bool(lhs), fillvalue]
-        )
-        appl = paterm.AAppl(paterm.ATerm('Executor'), operands,
-                            annotation=annotation)
+        appl = paterm.aappl(paterm.aterm('Executor'), operands)
+
+        # Set metadata on executor node
+        metadata = [datashape, id(executor), 'numba', bool(lhs), fillvalue]
+        plan.annotate(appl, metadata)
+
         return appl
 
     def register(self, graph, result, lhs=None):
@@ -150,7 +158,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
         if self.nesting_level == 0:
             # Bottom of graph that we can handle
-            return self.register_operand(graph, result, lhs)
+            return self.register_executable_graph(graph, result, lhs)
 
         self.result = result
 
@@ -263,14 +271,15 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         operator, operand = app.args
         self.visitchildren0(app)
         self.ufunc_builder.operands.append(operand)
-        return self.register_operand(app, None, None)
+        return self.register_executable_graph(app, None, None)
 
     def AAppl(self, app):
         "Look for unops, binops and reductions and anything else we can handle"
-        if is_arithmetic(app) or is_math(app):
+        if 'elementwise' in app.annotation and (is_arithmetic(app) or
+                                              is_math(app)):
             return self.handle_math_or_arithmetic(app)
 
-        if is_full_reduction(app):
+        if 'full_reduction' in app.annotation and is_reduction(app):
             return self.handle_full_reduction(app)
 
         elif is_slice(app):
@@ -369,7 +378,7 @@ def unannotate_dtype(aterm):
     int32
     """
     # unpack the annotation {'s': 'int32'}
-    unpack = paterm.matches('dshape(s);*', aterm.annotation['type'])
+    unpack = paterm.match('dshape(s);*', aterm.annotation['type'])
     ds_str = unpack['s']
     dshape = datashape(ds_str.s)
 
