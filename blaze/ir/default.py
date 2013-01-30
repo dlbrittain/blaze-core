@@ -5,7 +5,7 @@ from itertools import izip
 from blaze.aterm import build
 
 #------------------------------------------------------------------------
-# Phase 1 ( Types )
+# Phase 0 ( Control )
 #------------------------------------------------------------------------
 
 class ANode(object):
@@ -33,7 +33,6 @@ class ANode(object):
 
     def to_aterm(self):
         raise NotImplementedError
-
 
     @property
     def children(self):
@@ -64,17 +63,16 @@ class Unit(ANode):
     """
     Scalar array
     """
-    pass
+    _fields = ['start', 'stop', 'xs']
 
 class Slice(ANode):
     _fields = ['start', 'stop', 'xs']
 
-
 class Map(ANode):
-    _fields = ['fn', 'axis', 'xs']
+    _fields = ['fn', 'xs']
 
 class Zip(ANode):
-    _fields = ['fn', 'axis', 'xs', 'ys']
+    _fields = ['fn', 'xs', 'ys']
 
 class Reduce(ANode):
     _fields = ['fn', 'init', 'axis', 'xs']
@@ -89,39 +87,8 @@ class Compose(ANode):
     _fields = ['f', 'g']
 
 #------------------------------------------------------------------------
-# Phase 2 ( Layout & Locality )
+# Phase 1 ( Types )
 #------------------------------------------------------------------------
-
-class BNode(object):
-    pass
-
-# ------
-
-class ChunkedMap(object):
-    pass
-
-class ChunkedZip(object):
-    pass
-
-class ChunkedReduce(object):
-    pass
-
-class ChunkedScan(object):
-    pass
-
-# ------
-
-class TiledMap(object):
-    pass
-
-class TiledZip(object):
-    pass
-
-class TiledReduce(object):
-    pass
-
-class TiledScan(object):
-    pass
 
 #------------------------------------------------------------------------
 # Utils
@@ -129,8 +96,6 @@ class TiledScan(object):
 
 def eqcls(a,b):
     return a.__class__ is b.__class__
-
-
 
 if __name__ == '__main__':
     print Reduce(prims.add, 0, 3, [1,2,3])

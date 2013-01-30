@@ -2,7 +2,6 @@
 
 """
 Environment used for type reconstruction algorithms.
-
 """
 
 from itertools import chain
